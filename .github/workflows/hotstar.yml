@@ -61,18 +61,32 @@ jobs:
           fi
           export PATH=$HOME/sonar-scanner-cli/bin:$PATH
           sonar-scanner -v
-      # 7. SonarQube analysis
-      - name: SonarQube Analysis
-        env:
-          SONAR_HOST: ${{ secrets.SONAR_HOST }}
-          SONAR_LOGIN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          echo "SonarQube server URL: $SONAR_HOST"
-          curl -I $SONAR_HOST
-          mvn sonar:sonar \
-            -Dsonar.projectKey=hotstar \
-            -Dsonar.host.url=$SONAR_HOST \
-            -Dsonar.login=$SONAR_LOGIN
+# 7. SonarQube analysis
+- name: SonarQube Analysis
+  env:
+    SONAR_HOST: ${{ secrets.SONAR_HOST }}
+    SONAR_LOGIN: ${{ secrets.SONAR_TOKEN }}
+  run: |
+    echo "SonarQube server URL: $SONAR_HOST"
+ 
+    if [ -z "$SONAR_HOST" ]; then
+      echo "ERROR: SONAR_HOST secret is not configured"
+      exit 1
+    fi
+ 
+    if [ -z "$SONAR_LOGIN" ]; then
+      echo "ERROR: SONAR_TOKEN secret is not configured"
+      exit 1
+    fi
+ 
+    echo "Checking SonarQube connectivity..."
+    curl -f -I "$SONAR_HOST"
+ 
+    echo "Running SonarQube analysis..."
+    mvn sonar:sonar \
+      -Dsonar.projectKey=hotstar \
+      -Dsonar.host.url="$SONAR_HOST" \
+      -Dsonar.login="$SONAR_LOGIN"
 
   deploy:
     runs-on: ubuntu-latest
